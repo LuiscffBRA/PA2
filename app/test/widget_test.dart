@@ -5,7 +5,7 @@ void main() {
   testWidgets('App smoke test - inicializa na tela de cadastro', (WidgetTester tester) async {
     await tester.pumpWidget(const PegaBodeApp());
 
-    expect(find.text('Criar Conta'), findsOneWidget);
-    expect(find.text('Cadastre-se no Pega Bode'), findsOneWidget);
+    expect(find.text('Entrar'), findsOneWidget);
+    expect(find.text('Cadastre-se aqui'), findsOneWidget);
   });
 }

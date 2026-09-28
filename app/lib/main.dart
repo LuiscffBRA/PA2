@@ -18,7 +18,7 @@ class PegaBodeApp extends StatelessWidget {
       title: 'Pega Bode',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/register',
+      initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
