@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pa2/features/auth/models/user_model.dart';
 import '../models/post_model.dart';
 
@@ -7,11 +8,149 @@ class FeedService extends ChangeNotifier {
   factory FeedService() => _instance;
   FeedService._internal() {
     _initSeedData();
+    _fetchPostsFromSupabase();
   }
 
   final List<PostModel> _posts = [];
+  bool _isLoading = false;
 
   List<PostModel> get posts => List.unmodifiable(_posts);
+  bool get isLoading => _isLoading;
+
+  /// Busca postagens do Supabase com fallback para dados locais
+  Future<void> _fetchPostsFromSupabase() async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client
+          .from('posts')
+          .select()
+          .order('created_at', ascending: false);
+
+      if (response.isNotEmpty) {
+        final dbPosts = (response as List).map((row) {
+          return PostModel(
+            id: row['id'].toString(),
+            vendorId: row['vendor_id'].toString(),
+            vendorName: row['vendor_name'] ?? 'Vendedor(a)',
+            vendorTradeName: row['vendor_trade_name'] ?? 'Ponto Local',
+            vendorPhone: row['vendor_phone'],
+            title: row['title'] ?? '',
+            description: row['description'] ?? '',
+            price: (row['price'] as num).toDouble(),
+            imageUrl: row['image_url'],
+            category: row['category'],
+            createdAt: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
+          );
+        }).toList();
+
+        _posts.clear();
+        _posts.addAll(dbPosts);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Aviso Supabase: usando postagens locais ($e)');
+    }
+  }
+
+  /// Recarrega postagens (para pull-to-refresh)
+  Future<void> refresh() async {
+    _isLoading = true;
+    notifyListeners();
+    await _fetchPostsFromSupabase();
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Cria uma nova postagem no Supabase e atualiza o feed local
+  Future<PostModel> createPost({
+    required UserModel vendor,
+    required String title,
+    required String description,
+    required double price,
+    String? imageUrl,
+    String? category,
+  }) async {
+    if (!vendor.isVendor) {
+      throw Exception('Apenas usuários comerciantes/vendedores podem criar postagens.');
+    }
+    if (title.trim().isEmpty) {
+      throw Exception('Informe o nome ou título do produto.');
+    }
+    if (description.trim().isEmpty) {
+      throw Exception('Informe a descrição do produto.');
+    }
+    if (price <= 0) {
+      throw Exception('O valor do produto deve ser maior que zero.');
+    }
+
+    final postImage = imageUrl?.trim().isNotEmpty == true
+        ? imageUrl!.trim()
+        : 'assets/images/pastel.jpg';
+
+    String newId = 'post_${DateTime.now().millisecondsSinceEpoch}';
+
+    // Garante que o vendor_id enviado ao banco é sempre um UUID válido para o Postgres
+    String validVendorId = vendor.id;
+    final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    if (!uuidRegex.hasMatch(validVendorId)) {
+      final hexTimestamp = DateTime.now().millisecondsSinceEpoch.toRadixString(16).padLeft(12, '0');
+      validVendorId = '00000000-0000-4000-8000-$hexTimestamp';
+    }
+
+    // Tenta persistir no Supabase
+    try {
+      final client = Supabase.instance.client;
+      final payload = {
+        'vendor_id': validVendorId,
+        'vendor_name': vendor.name,
+        'vendor_trade_name': vendor.tradeName ?? vendor.name,
+        'vendor_phone': vendor.phone,
+        'title': title.trim(),
+        'description': description.trim(),
+        'price': price,
+        'image_url': postImage,
+        'category': category?.trim() ?? 'Outros',
+      };
+
+      try {
+        final inserted = await client.from('posts').insert(payload).select().single();
+        newId = inserted['id'].toString();
+      } catch (insertError) {
+        // Se a tabela posts não tiver as colunas extras de vendor, insere com campos padrão
+        debugPrint('Tentando insert simplificado: $insertError');
+        final simplePayload = {
+          'vendor_id': validVendorId,
+          'title': title.trim(),
+          'description': description.trim(),
+          'price': price,
+          'image_url': postImage,
+          'category': category?.trim() ?? 'Outros',
+        };
+        final inserted = await client.from('posts').insert(simplePayload).select().single();
+        newId = inserted['id'].toString();
+      }
+    } catch (e) {
+      debugPrint('Aviso ao salvar post no Supabase: $e');
+    }
+
+    final newPost = PostModel(
+      id: newId,
+      vendorId: vendor.id,
+      vendorName: vendor.name,
+      vendorTradeName: vendor.tradeName ?? vendor.name,
+      vendorPhone: vendor.phone,
+      title: title.trim(),
+      description: description.trim(),
+      price: price,
+      imageUrl: postImage,
+      category: category?.trim(),
+      createdAt: DateTime.now(),
+    );
+
+    _posts.insert(0, newPost);
+    notifyListeners();
+    return newPost;
+  }
 
   void _initSeedData() {
     if (_posts.isNotEmpty) return;
@@ -412,54 +551,6 @@ class FeedService extends ChangeNotifier {
         likesCount: 18,
       ),
     ]);
-  }
-
-  /// Cria uma nova postagem no feed
-  Future<PostModel> createPost({
-    required UserModel vendor,
-    required String title,
-    required String description,
-    required double price,
-    String? imageUrl,
-    String? category,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (!vendor.isVendor) {
-      throw Exception('Apenas usuários comerciantes/vendedores podem criar postagens.');
-    }
-
-    if (title.trim().isEmpty) {
-      throw Exception('Informe o nome ou título do produto.');
-    }
-
-    if (description.trim().isEmpty) {
-      throw Exception('Informe a descrição do produto.');
-    }
-
-    if (price <= 0) {
-      throw Exception('O valor do produto deve ser maior que zero.');
-    }
-
-    final newPost = PostModel(
-      id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-      vendorId: vendor.id,
-      vendorName: vendor.name,
-      vendorTradeName: vendor.tradeName ?? vendor.name,
-      vendorPhone: vendor.phone,
-      title: title.trim(),
-      description: description.trim(),
-      price: price,
-      imageUrl: imageUrl?.trim().isNotEmpty == true
-          ? imageUrl!.trim()
-          : 'assets/images/pastel.jpg',
-      category: category?.trim(),
-      createdAt: DateTime.now(),
-    );
-
-    _posts.insert(0, newPost);
-    notifyListeners();
-    return newPost;
   }
 
   @visibleForTesting

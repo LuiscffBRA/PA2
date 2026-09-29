@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/config/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
 import 'features/feed/screens/feed_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const PegaBodeApp());
+
+  bool hasSession = false;
+  // Inicializa o Supabase com tratamento de fallback
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.supabaseUrl,
+      anonKey: SupabaseConfig.supabaseAnonKey,
+    );
+    hasSession = Supabase.instance.client.auth.currentSession != null;
+  } catch (e) {
+    debugPrint('Aviso Supabase.initialize: $e');
+  }
+
+  runApp(PegaBodeApp(initialRoute: hasSession ? '/feed' : '/login'));
 }
 
 class PegaBodeApp extends StatelessWidget {
-  const PegaBodeApp({super.key});
+  final String initialRoute;
+  const PegaBodeApp({super.key, this.initialRoute = '/login'});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +34,7 @@ class PegaBodeApp extends StatelessWidget {
       title: 'Pega Bode',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/login',
+      initialRoute: initialRoute,
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
