@@ -7,10 +7,11 @@ class PostModel {
   final String title;
   final String description;
   final double price;
-  final String? imageUrl; // URL ou path de arquivo local
+  final String? imageUrl;
   final String? category;
   final DateTime createdAt;
   final int likesCount;
+  final bool isLikedByMe;
 
   PostModel({
     required this.id,
@@ -25,7 +26,40 @@ class PostModel {
     this.category,
     DateTime? createdAt,
     this.likesCount = 0,
+    this.isLikedByMe = false,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  PostModel copyWith({
+    String? id,
+    String? vendorId,
+    String? vendorName,
+    String? vendorTradeName,
+    String? vendorPhone,
+    String? title,
+    String? description,
+    double? price,
+    String? imageUrl,
+    String? category,
+    DateTime? createdAt,
+    int? likesCount,
+    bool? isLikedByMe,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      vendorId: vendorId ?? this.vendorId,
+      vendorName: vendorName ?? this.vendorName,
+      vendorTradeName: vendorTradeName ?? this.vendorTradeName,
+      vendorPhone: vendorPhone ?? this.vendorPhone,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      category: category ?? this.category,
+      createdAt: createdAt ?? this.createdAt,
+      likesCount: likesCount ?? this.likesCount,
+      isLikedByMe: isLikedByMe ?? this.isLikedByMe,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -41,6 +75,7 @@ class PostModel {
       'category': category,
       'createdAt': createdAt.toIso8601String(),
       'likesCount': likesCount,
+      'isLikedByMe': isLikedByMe,
     };
   }
 
@@ -58,6 +93,7 @@ class PostModel {
       category: json['category'] as String?,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
+      isLikedByMe: json['isLikedByMe'] as bool? ?? false,
     );
   }
 }

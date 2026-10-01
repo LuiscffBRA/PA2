@@ -21,34 +21,77 @@ class FeedService extends ChangeNotifier {
   Future<void> _fetchPostsFromSupabase() async {
     try {
       final client = Supabase.instance.client;
+      final currentUserId = client.auth.currentUser?.id;
+
       final response = await client
           .from('posts')
-          .select()
+          .select('*, likes(user_id)')
           .order('created_at', ascending: false);
 
-      if (response.isNotEmpty) {
-        final dbPosts = (response as List).map((row) {
-          return PostModel(
-            id: row['id'].toString(),
-            vendorId: row['vendor_id'].toString(),
-            vendorName: row['vendor_name'] ?? 'Vendedor(a)',
-            vendorTradeName: row['vendor_trade_name'] ?? 'Ponto Local',
-            vendorPhone: row['vendor_phone'],
-            title: row['title'] ?? '',
-            description: row['description'] ?? '',
-            price: (row['price'] as num).toDouble(),
-            imageUrl: row['image_url'],
-            category: row['category'],
-            createdAt: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
-          );
-        }).toList();
+      final dbPosts = (response as List).map((row) {
+        final likes = row['likes'] as List<dynamic>? ?? [];
+        final likesCount = likes.length;
+        final isLikedByMe = currentUserId != null
+            ? likes.any((like) => like['user_id'] == currentUserId)
+            : false;
 
-        _posts.clear();
-        _posts.addAll(dbPosts);
-        notifyListeners();
+        return PostModel(
+          id: row['id'].toString(),
+          vendorId: row['vendor_id'].toString(),
+          vendorName: row['vendor_name'] ?? 'Vendedor(a)',
+          vendorTradeName: row['vendor_trade_name'] ?? 'Ponto Local',
+          vendorPhone: row['vendor_phone'],
+          title: row['title'] ?? '',
+          description: row['description'] ?? '',
+          price: (row['price'] as num).toDouble(),
+          imageUrl: row['image_url'],
+          category: row['category'],
+          createdAt: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
+          likesCount: likesCount,
+          isLikedByMe: isLikedByMe,
+        );
+      }).toList();
+
+      _posts.clear();
+      _posts.addAll(dbPosts);
+      notifyListeners();
+      
+    } catch (e) {
+      debugPrint('Aviso Supabase: falha ao recarregar postagens ($e)');
+    }
+  }
+
+  /// Curte ou descurte uma postagem (Onda 2)
+  Future<void> toggleLike(String postId, String userId) async {
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index == -1) return;
+
+    final post = _posts[index];
+    final isCurrentlyLiked = post.isLikedByMe;
+
+    // Atualização otimista
+    _posts[index] = post.copyWith(
+      isLikedByMe: !isCurrentlyLiked,
+      likesCount: post.likesCount + (isCurrentlyLiked ? -1 : 1),
+    );
+    notifyListeners();
+
+    try {
+      final client = Supabase.instance.client;
+      if (isCurrentlyLiked) {
+        // Remover curtida
+        await client
+            .from('likes')
+            .delete()
+            .match({'post_id': postId, 'user_id': userId});
+      } else {
+        // Adicionar curtida
+        await client
+            .from('likes')
+            .insert({'post_id': postId, 'user_id': userId});
       }
     } catch (e) {
-      debugPrint('Aviso Supabase: usando postagens locais ($e)');
+      debugPrint('Aviso Supabase (Like offline/teste): $e');
     }
   }
 
@@ -59,6 +102,62 @@ class FeedService extends ChangeNotifier {
     await _fetchPostsFromSupabase();
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Pesquisa postagens por título, descrição ou nome do vendedor (Onda 2)
+  List<PostModel> searchPosts(String query) {
+    if (query.trim().isEmpty) return _posts;
+    final lowerQuery = query.toLowerCase().trim();
+    return _posts.where((post) {
+      return post.title.toLowerCase().contains(lowerQuery) ||
+             post.description.toLowerCase().contains(lowerQuery) ||
+             post.vendorTradeName.toLowerCase().contains(lowerQuery) ||
+             post.vendorName.toLowerCase().contains(lowerQuery);
+    }).toList();
+  }
+
+  /// Busca postagens do banco de dados para um vendedor específico (Onda 2)
+  Future<List<PostModel>> fetchPostsByVendor(String vendorId) async {
+    try {
+      final client = Supabase.instance.client;
+      final currentUserId = client.auth.currentUser?.id;
+
+      final data = await client
+          .from('posts')
+          .select('*, likes(user_id)')
+          .eq('vendor_id', vendorId)
+          .order('created_at', ascending: false);
+
+      final List<PostModel> fetchedPosts = [];
+      for (final row in data as List) {
+        final likes = row['likes'] as List<dynamic>? ?? [];
+        final likesCount = likes.length;
+        final isLikedByMe = currentUserId != null
+            ? likes.any((like) => like['user_id'] == currentUserId)
+            : false;
+
+        fetchedPosts.add(PostModel(
+          id: row['id'].toString(),
+          vendorId: row['vendor_id'].toString(),
+          vendorName: row['vendor_name'] ?? 'Vendedor(a)',
+          vendorTradeName: row['vendor_trade_name'] ?? 'Ponto Local',
+          vendorPhone: row['vendor_phone'],
+          title: row['title'] ?? '',
+          description: row['description'] ?? '',
+          price: (row['price'] as num).toDouble(),
+          imageUrl: row['image_url'],
+          category: row['category'],
+          createdAt: DateTime.tryParse(row['created_at'] ?? '') ?? DateTime.now(),
+          likesCount: likesCount,
+          isLikedByMe: isLikedByMe,
+        ));
+      }
+      return fetchedPosts;
+    } catch (e) {
+      debugPrint('Aviso: Falha ao buscar posts do vendedor: $e');
+      // Tenta fallback offline
+      return _posts.where((p) => p.vendorId.toLowerCase() == vendorId.toLowerCase()).toList();
+    }
   }
 
   /// Cria uma nova postagem no Supabase e atualiza o feed local

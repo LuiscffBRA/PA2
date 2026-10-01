@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:pa2/core/theme/app_theme.dart';
 import '../models/post_model.dart';
 import 'post_details_modal.dart';
+import 'package:pa2/features/profile/screens/vendor_profile_screen.dart';
+import 'package:pa2/features/auth/services/auth_service.dart';
+import '../services/feed_service.dart';
 
 class PostCardWidget extends StatelessWidget {
   final PostModel post;
@@ -82,36 +85,45 @@ class PostCardWidget extends StatelessWidget {
             // Cabeçalho do Vendedor
             Padding(
               padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppTheme.primaryLight,
-                    child: const Icon(Icons.storefront, color: AppTheme.primaryDark),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.vendorTradeName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        Text(
-                          'Por ${post.vendorName}',
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => VendorProfileScreen(vendorId: post.vendorId),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  );
+                },
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppTheme.primaryLight,
+                      child: const Icon(Icons.storefront, color: AppTheme.primaryDark),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            post.vendorTradeName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            'Por ${post.vendorName}',
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppTheme.secondaryColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
@@ -128,6 +140,7 @@ class PostCardWidget extends StatelessWidget {
                 ],
               ),
             ),
+          ),
 
             // Foto do Produto
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
@@ -186,8 +199,26 @@ class PostCardWidget extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.favorite_border, size: 20, color: Colors.grey),
-                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: Icon(
+                              post.isLikedByMe ? Icons.favorite : Icons.favorite_border,
+                              color: post.isLikedByMe ? Colors.red : Colors.grey,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              final authService = AuthService();
+                              final currentUser = authService.currentUser;
+                              if (currentUser != null) {
+                                FeedService().toggleLike(post.id, currentUser.id);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Faça login para curtir!')),
+                                );
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 6),
                           Text(
                             '${post.likesCount} curtidas',
                             style: const TextStyle(fontSize: 12, color: Colors.grey),

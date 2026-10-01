@@ -5,6 +5,9 @@ import '../models/food_catalog.dart';
 import '../services/feed_service.dart';
 import '../widgets/post_card_widget.dart';
 import 'create_post_screen.dart';
+import 'package:pa2/features/chat/screens/inbox_screen.dart';
+import 'package:pa2/features/chat/services/chat_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -18,6 +21,7 @@ class _FeedScreenState extends State<FeedScreen> {
   final _authService = AuthService();
 
   String? _selectedCategoryFilter;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -38,9 +42,12 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _authService.currentUser;
-    final allPosts = _feedService.posts;
+    // Pega as postagens pesquisadas
+    final allPosts = _searchQuery.isEmpty 
+        ? _feedService.posts 
+        : _feedService.searchPosts(_searchQuery);
 
-    // Filtra postagens pela categoria selecionada no topo do feed
+    // Aplica o filtro de categoria por cima
     final filteredPosts = _selectedCategoryFilter == null
         ? allPosts
         : allPosts.where((p) => p.category == _selectedCategoryFilter).toList();
@@ -49,6 +56,42 @@ class _FeedScreenState extends State<FeedScreen> {
       appBar: AppBar(
         title: const Text('Pega Bode Feed'),
         actions: [
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: Supabase.instance.client
+                .from('chat_messages')
+                .stream(primaryKey: ['id'])
+                .eq('receiver_id', _authService.currentUser?.id ?? ''),
+            builder: (context, snapshot) {
+              int unreadCount = 0;
+              if (snapshot.hasData) {
+                final messages = snapshot.data!;
+                unreadCount = messages.where((m) {
+                  final createdAt = DateTime.tryParse(m['created_at'].toString()) ?? DateTime.now();
+                  return createdAt.isAfter(ChatService.lastInboxOpenTime);
+                }).length;
+              }
+
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text(unreadCount > 99 ? '99+' : unreadCount.toString()),
+                  child: const Icon(Icons.chat_bubble_outline),
+                ),
+                tooltip: 'Minhas Conversas',
+                onPressed: () {
+                  // Atualiza o tempo de leitura
+                  ChatService.lastInboxOpenTime = DateTime.now();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const InboxScreen()),
+                  ).then((_) {
+                    // Atualiza o badge quando voltar da tela de inbox
+                    if (mounted) setState(() {});
+                  });
+                },
+              );
+            }
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sair',
@@ -128,6 +171,34 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
 
             const SizedBox(height: 8),
+
+            // Barra de Pesquisa (Onda 2)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Pesquisar lanches, pontos ou vendedores...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Barra de Filtros de Categoria (Rolar / Visualizar Feed dinâmico)
             SizedBox(

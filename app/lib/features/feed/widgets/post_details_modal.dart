@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pa2/core/theme/app_theme.dart';
 import '../models/post_model.dart';
+import 'package:pa2/features/profile/screens/vendor_profile_screen.dart';
 
 class PostDetailsModal extends StatelessWidget {
   final PostModel post;
@@ -149,44 +150,56 @@ class PostDetailsModal extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: AppTheme.primaryLight,
-                        child: const Icon(Icons.storefront, color: AppTheme.primaryDark),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              post.vendorTradeName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              'Vendedor(a): ${post.vendorName}',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                            if (post.vendorPhone != null)
+                  InkWell(
+                    onTap: () {
+                      Navigator.pop(context); // close modal
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VendorProfileScreen(vendorId: post.vendorId),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: AppTheme.primaryLight,
+                          child: const Icon(Icons.storefront, color: AppTheme.primaryDark),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                'Contato: ${post.vendorPhone}',
+                                post.vendorTradeName,
                                 style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
-                          ],
+                              Text(
+                                'Vendedor(a): ${post.vendorName}',
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (post.vendorPhone != null)
+                                Text(
+                                  'Contato: ${post.vendorPhone}',
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
 

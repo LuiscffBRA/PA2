@@ -230,6 +230,36 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Busca o perfil público de qualquer usuário (útil para Perfil do Vendedor)
+  Future<UserModel?> getUserProfile(String userId) async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client.from('profiles').select().eq('id', userId).maybeSingle();
+      
+      if (response != null) {
+        return UserModel(
+          id: response['id']?.toString() ?? userId,
+          name: response['name']?.toString() ?? 'Vendedor',
+          email: response['email']?.toString() ?? '',
+          userType: response['user_type'] == 'vendor' ? UserType.vendor : UserType.client,
+          phone: response['phone']?.toString(),
+          tradeName: response['trade_name']?.toString(),
+          bio: response['bio']?.toString(),
+          createdAt: DateTime.tryParse(response['created_at']?.toString() ?? '') ?? DateTime.now(),
+        );
+      }
+    } catch (e) {
+      debugPrint('Aviso: Não foi possível buscar perfil online ($e)');
+    }
+    
+    // Fallback para os dados locais de teste se disponível (apenas para testes offline locais)
+    if (_memoryUsersDatabase.containsKey(userId)) {
+      return _memoryUsersDatabase[userId]!.user;
+    }
+    
+    return null;
+  }
+
   @visibleForTesting
   void reset() {
     _memoryUsersDatabase.clear();
