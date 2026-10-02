@@ -65,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       // Redireciona para o Feed
-      Navigator.pushReplacementNamed(context, '/feed');
+      Navigator.pushReplacementNamed(context, '/main');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,21 +97,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.storefront_rounded,
-                      size: 54,
-                      color: AppTheme.primaryColor,
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/logo.jpg',
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Cadastre-se no Pega Bode',
+                  'Cadastre-se no AchaNaRua',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,

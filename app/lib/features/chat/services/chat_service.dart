@@ -1,8 +1,36 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pa2/features/chat/models/chat_message_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ChatService {
+  static const _lastOpenKey = 'last_inbox_open_time';
+  
+  // Apenas em memória para leituras síncronas instantâneas
   static DateTime lastInboxOpenTime = DateTime.now().subtract(const Duration(days: 30));
+
+  static Future<void> loadLastInboxOpenTime() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timeStr = prefs.getString(_lastOpenKey);
+      if (timeStr != null) {
+        lastInboxOpenTime = DateTime.parse(timeStr);
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar lastInboxOpenTime: $e');
+    }
+  }
+
+  static Future<void> saveLastInboxOpenTime(DateTime time) async {
+    lastInboxOpenTime = time;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastOpenKey, time.toIso8601String());
+    } catch (e) {
+      debugPrint('Erro ao salvar lastInboxOpenTime: $e');
+    }
+  }
   
   final _client = Supabase.instance.client;
 

@@ -54,68 +54,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pega Bode Feed'),
-        actions: [
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: Supabase.instance.client
-                .from('chat_messages')
-                .stream(primaryKey: ['id'])
-                .eq('receiver_id', _authService.currentUser?.id ?? ''),
-            builder: (context, snapshot) {
-              int unreadCount = 0;
-              if (snapshot.hasData) {
-                final messages = snapshot.data!;
-                unreadCount = messages.where((m) {
-                  final createdAt = DateTime.tryParse(m['created_at'].toString()) ?? DateTime.now();
-                  return createdAt.isAfter(ChatService.lastInboxOpenTime);
-                }).length;
-              }
-
-              return IconButton(
-                icon: Badge(
-                  isLabelVisible: unreadCount > 0,
-                  label: Text(unreadCount > 99 ? '99+' : unreadCount.toString()),
-                  child: const Icon(Icons.chat_bubble_outline),
-                ),
-                tooltip: 'Minhas Conversas',
-                onPressed: () {
-                  // Atualiza o tempo de leitura
-                  ChatService.lastInboxOpenTime = DateTime.now();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const InboxScreen()),
-                  ).then((_) {
-                    // Atualiza o badge quando voltar da tela de inbox
-                    if (mounted) setState(() {});
-                  });
-                },
-              );
-            }
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sair',
-            onPressed: () {
-              _authService.logout();
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
-        ],
+        title: const Text('AchaNaRua Feed'),
+        elevation: 0,
       ),
-      floatingActionButton: user?.isVendor == true
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreatePostScreen()),
-                );
-              },
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('Criar Postagem'),
-            )
-          : null,
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {});
@@ -171,34 +112,6 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
 
             const SizedBox(height: 8),
-
-            // Barra de Pesquisa (Onda 2)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar lanches, pontos ou vendedores...',
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
 
             // Barra de Filtros de Categoria (Rolar / Visualizar Feed dinâmico)
             SizedBox(

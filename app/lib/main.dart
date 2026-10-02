@@ -4,41 +4,40 @@ import 'core/config/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
-import 'features/feed/screens/feed_screen.dart';
+import 'features/dashboard/screens/main_screen.dart';
+import 'package:pa2/features/splash/screens/animated_splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  bool hasSession = false;
-  // Inicializa o Supabase com tratamento de fallback
+  // Inicializa o Supabase
   try {
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
       anonKey: SupabaseConfig.supabaseAnonKey,
     );
-    hasSession = Supabase.instance.client.auth.currentSession != null;
   } catch (e) {
     debugPrint('Aviso Supabase.initialize: $e');
   }
 
-  runApp(PegaBodeApp(initialRoute: hasSession ? '/feed' : '/login'));
+  runApp(const AchaNaRuaApp());
 }
 
-class PegaBodeApp extends StatelessWidget {
-  final String initialRoute;
-  const PegaBodeApp({super.key, this.initialRoute = '/login'});
+class AchaNaRuaApp extends StatelessWidget {
+  const AchaNaRuaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pega Bode',
+      title: 'AchaNaRua',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: initialRoute,
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const AnimatedSplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/feed': (context) => const FeedScreen(),
+        '/main': (context) => const MainScreen(),
       },
     );
   }
