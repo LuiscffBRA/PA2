@@ -42,7 +42,14 @@ class _MainScreenState extends State<MainScreen> {
       _screens = [
         const FeedScreen(),
         const SearchScreen(),
-        const CreatePostScreen(),
+        CreatePostScreen(
+          onPostCreated: () {
+            // Após postar, muda para a aba inicial (Home/Feed)
+            setState(() {
+              _currentIndex = 0;
+            });
+          },
+        ),
         const InboxScreen(),
         const UserProfileScreen(),
       ];

@@ -8,7 +8,9 @@ import '../models/food_catalog.dart';
 import '../services/feed_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({super.key});
+  final VoidCallback? onPostCreated;
+
+  const CreatePostScreen({super.key, this.onPostCreated});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -163,7 +165,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             backgroundColor: AppTheme.secondaryColor,
           ),
         );
-        Navigator.pop(context, true);
+        // Reseta o formulário após publicar com sucesso, pois esta tela agora fica numa aba fixa
+        _titleController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        setState(() {
+          _selectedCategory = null;
+          _selectedSuggestion = null;
+          _selectedImageUrl = null;
+          _pickedImageFile = null;
+        });
+        
+        if (widget.onPostCreated != null) {
+          widget.onPostCreated!();
+        }
       }
     } catch (e) {
       setState(() {
