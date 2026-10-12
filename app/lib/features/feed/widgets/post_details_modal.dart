@@ -11,6 +11,7 @@ import 'package:pa2/features/auth/services/auth_service.dart';
 import 'package:pa2/features/profile/screens/vendor_profile_screen.dart';
 import 'package:pa2/features/chat/screens/chat_screen.dart';
 import 'package:pa2/features/payments/widgets/pix_payment_modal.dart';
+import 'in_app_map_modal.dart';
 
 class PostDetailsModal extends StatefulWidget {
   final PostModel post;
@@ -328,16 +329,44 @@ class _PostDetailsModalState extends State<PostDetailsModal> {
                             style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
                           ),
                           const SizedBox(height: 10),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.map_outlined, size: 16),
-                            label: const Text('Como Chegar (Google Maps)'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade700,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 38),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            onPressed: () => _openGoogleMaps(locationText),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.map, size: 18),
+                                  label: const Text('Ver Mapa no App'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(0, 40),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () {
+                                    InAppMapModal.show(
+                                      context,
+                                      title: post.vendorTradeName,
+                                      referencePoint: locationText,
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: OutlinedButton.icon(
+                                  icon: const Icon(Icons.directions, size: 16),
+                                  label: const Text('Google Maps', style: TextStyle(fontSize: 12)),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.blue.shade800,
+                                    minimumSize: const Size(0, 40),
+                                    side: BorderSide(color: Colors.blue.shade300),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () => _openGoogleMaps(locationText),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

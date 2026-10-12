@@ -39,6 +39,8 @@ dependencies:
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
   qr_flutter: ^4.1.0
+  flutter_map: 7.0.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:

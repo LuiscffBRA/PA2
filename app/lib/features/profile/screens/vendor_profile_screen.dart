@@ -8,6 +8,7 @@ import 'package:pa2/features/feed/services/feed_service.dart';
 import 'package:pa2/features/feed/widgets/post_card_widget.dart';
 import 'package:pa2/features/chat/screens/chat_screen.dart';
 import 'package:pa2/features/payments/widgets/pix_payment_modal.dart';
+import 'package:pa2/features/feed/widgets/in_app_map_modal.dart';
 
 class VendorProfileScreen extends StatefulWidget {
   final String vendorId;
@@ -272,18 +273,48 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
                         style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, height: 1.3),
                       ),
                       const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.map_outlined, size: 18),
-                        label: const Text('Abrir no Google Maps / Como Chegar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 42),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.map, size: 18),
+                              label: const Text('Ver Mapa no App'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(0, 42),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () {
+                                InAppMapModal.show(
+                                  context,
+                                  title: tradeNameSafe,
+                                  referencePoint: locationText,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        onPressed: () => _openGoogleMaps(locationText),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.directions, size: 16),
+                              label: const Text('Google Maps', style: TextStyle(fontSize: 12)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.blue.shade800,
+                                minimumSize: const Size(0, 42),
+                                side: BorderSide(color: Colors.blue.shade300),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () => _openGoogleMaps(locationText),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
