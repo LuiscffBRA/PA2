@@ -26,6 +26,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _tradeNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
+  final _pixKeyController = TextEditingController();
+  final _referencePointController = TextEditingController();
+  String _selectedPixType = 'Telefone';
+
+  final List<String> _pixTypes = [
+    'Telefone',
+    'CPF',
+    'CNPJ',
+    'E-mail',
+    'Chave Aleatória',
+  ];
 
   @override
   void dispose() {
@@ -36,6 +47,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _tradeNameController.dispose();
     _phoneController.dispose();
     _bioController.dispose();
+    _pixKeyController.dispose();
+    _referencePointController.dispose();
     super.dispose();
   }
 
@@ -53,6 +66,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         tradeName: _selectedUserType == UserType.vendor ? _tradeNameController.text : null,
         phone: _selectedUserType == UserType.vendor ? _phoneController.text : null,
         bio: _selectedUserType == UserType.vendor ? _bioController.text : null,
+        pixKey: _selectedUserType == UserType.vendor ? _pixKeyController.text : null,
+        pixKeyType: _selectedUserType == UserType.vendor ? _selectedPixType : null,
+        referencePoint: _selectedUserType == UserType.vendor ? _referencePointController.text : null,
       );
 
       if (!mounted) return;
@@ -311,6 +327,82 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'Ex: Salgados, pastéis e sucos frescos todos os dias.',
                     ),
                     maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _referencePointController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ponto de Referência / Localização',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                      hintText: 'Ex: Praça Central, em frente à igreja',
+                      helperText: 'Usado para orientar seus clientes no mapa.',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Seção PIX para Vendedores
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.qr_code_2, color: Colors.teal, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Recebimento via PIX (Onda 3)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Informe sua chave Pix real cadastrada no seu banco para os clientes gerarem o QR Code e pagarem direto para sua conta:',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _selectedPixType,
+                          decoration: const InputDecoration(
+                            labelText: 'Tipo de Chave PIX',
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          items: _pixTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedPixType = val);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _pixKeyController,
+                          decoration: InputDecoration(
+                            labelText: 'Chave PIX Real',
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: _selectedPixType == 'Telefone'
+                                ? 'Ex: 11999998888'
+                                : _selectedPixType == 'CPF'
+                                    ? 'Ex: 12345678900'
+                                    : _selectedPixType == 'E-mail'
+                                        ? 'Ex: seu@email.com'
+                                        : 'Digite a chave exata',
+                            helperText: 'Você também pode editar ou alterar essa chave no seu perfil mais tarde.',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],

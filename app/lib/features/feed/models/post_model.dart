@@ -4,6 +4,8 @@ class PostModel {
   final String vendorName;
   final String vendorTradeName;
   final String? vendorPhone;
+  final String? vendorReferencePoint;
+  final String? vendorPixKey;
   final String title;
   final String description;
   final double price;
@@ -11,6 +13,7 @@ class PostModel {
   final String? category;
   final DateTime createdAt;
   final int likesCount;
+  final int commentsCount;
   final bool isLikedByMe;
 
   PostModel({
@@ -19,6 +22,8 @@ class PostModel {
     required this.vendorName,
     required this.vendorTradeName,
     this.vendorPhone,
+    this.vendorReferencePoint,
+    this.vendorPixKey,
     required this.title,
     required this.description,
     required this.price,
@@ -26,6 +31,7 @@ class PostModel {
     this.category,
     DateTime? createdAt,
     this.likesCount = 0,
+    this.commentsCount = 0,
     this.isLikedByMe = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -35,6 +41,8 @@ class PostModel {
     String? vendorName,
     String? vendorTradeName,
     String? vendorPhone,
+    String? vendorReferencePoint,
+    String? vendorPixKey,
     String? title,
     String? description,
     double? price,
@@ -42,6 +50,7 @@ class PostModel {
     String? category,
     DateTime? createdAt,
     int? likesCount,
+    int? commentsCount,
     bool? isLikedByMe,
   }) {
     return PostModel(
@@ -50,6 +59,8 @@ class PostModel {
       vendorName: vendorName ?? this.vendorName,
       vendorTradeName: vendorTradeName ?? this.vendorTradeName,
       vendorPhone: vendorPhone ?? this.vendorPhone,
+      vendorReferencePoint: vendorReferencePoint ?? this.vendorReferencePoint,
+      vendorPixKey: vendorPixKey ?? this.vendorPixKey,
       title: title ?? this.title,
       description: description ?? this.description,
       price: price ?? this.price,
@@ -57,6 +68,7 @@ class PostModel {
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
       likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
     );
   }
@@ -68,6 +80,8 @@ class PostModel {
       'vendorName': vendorName,
       'vendorTradeName': vendorTradeName,
       'vendorPhone': vendorPhone,
+      'vendorReferencePoint': vendorReferencePoint,
+      'vendorPixKey': vendorPixKey,
       'title': title,
       'description': description,
       'price': price,
@@ -75,6 +89,7 @@ class PostModel {
       'category': category,
       'createdAt': createdAt.toIso8601String(),
       'likesCount': likesCount,
+      'commentsCount': commentsCount,
       'isLikedByMe': isLikedByMe,
     };
   }
@@ -82,17 +97,20 @@ class PostModel {
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
       id: json['id'] as String,
-      vendorId: json['vendorId'] as String,
-      vendorName: json['vendorName'] as String,
-      vendorTradeName: json['vendorTradeName'] as String,
-      vendorPhone: json['vendorPhone'] as String?,
+      vendorId: (json['vendorId'] ?? json['vendor_id']) as String,
+      vendorName: (json['vendorName'] ?? json['vendor_name']) as String? ?? 'Vendedor(a)',
+      vendorTradeName: (json['vendorTradeName'] ?? json['vendor_trade_name']) as String? ?? 'Ponto Comercial',
+      vendorPhone: (json['vendorPhone'] ?? json['vendor_phone']) as String?,
+      vendorReferencePoint: (json['vendorReferencePoint'] ?? json['vendor_reference_point']) as String?,
+      vendorPixKey: (json['vendorPixKey'] ?? json['vendor_pix_key']) as String?,
       title: json['title'] as String,
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
-      imageUrl: json['imageUrl'] as String?,
+      imageUrl: (json['imageUrl'] ?? json['image_url']) as String?,
       category: json['category'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.tryParse((json['createdAt'] ?? json['created_at']) ?? '') ?? DateTime.now(),
+      likesCount: (json['likesCount'] ?? json['likes_count'] as num?)?.toInt() ?? 0,
+      commentsCount: (json['commentsCount'] ?? json['comments_count'] as num?)?.toInt() ?? 0,
       isLikedByMe: json['isLikedByMe'] as bool? ?? false,
     );
   }

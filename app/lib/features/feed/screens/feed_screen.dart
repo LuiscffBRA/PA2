@@ -4,10 +4,6 @@ import 'package:pa2/features/auth/services/auth_service.dart';
 import '../models/food_catalog.dart';
 import '../services/feed_service.dart';
 import '../widgets/post_card_widget.dart';
-import 'create_post_screen.dart';
-import 'package:pa2/features/chat/screens/inbox_screen.dart';
-import 'package:pa2/features/chat/services/chat_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -21,12 +17,13 @@ class _FeedScreenState extends State<FeedScreen> {
   final _authService = AuthService();
 
   String? _selectedCategoryFilter;
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _feedService.addListener(_onFeedChanged);
+    _feedService.refresh();
   }
 
   @override
@@ -56,10 +53,17 @@ class _FeedScreenState extends State<FeedScreen> {
       appBar: AppBar(
         title: const Text('AchaNaRua Feed'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Atualizar Feed',
+            onPressed: () => _feedService.refresh(),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {});
+          await _feedService.refresh();
         },
         child: ListView(
           padding: const EdgeInsets.only(top: 10, bottom: 80),

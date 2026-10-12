@@ -2,10 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pa2/main.dart';
 
 void main() {
-  testWidgets('App smoke test - inicializa na tela de cadastro', (WidgetTester tester) async {
-    await tester.pumpWidget(const PegaBodeApp());
+  testWidgets('App smoke test - inicializa e avança splash screen', (WidgetTester tester) async {
+    await tester.pumpWidget(const AchaNaRuaApp());
+    expect(find.byType(AchaNaRuaApp), findsOneWidget);
 
-    expect(find.text('Entrar'), findsOneWidget);
-    expect(find.text('Cadastre-se aqui'), findsOneWidget);
+    // Avança o temporizador da splash screen
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
   });
 }

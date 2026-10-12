@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:pa2/core/theme/app_theme.dart';
 import '../models/post_model.dart';
 import 'post_details_modal.dart';
+import 'comments_modal.dart';
 import 'package:pa2/features/profile/screens/vendor_profile_screen.dart';
 import 'package:pa2/features/auth/services/auth_service.dart';
+import 'package:pa2/features/payments/widgets/pix_payment_modal.dart';
 import '../services/feed_service.dart';
 
 class PostCardWidget extends StatelessWidget {
@@ -70,6 +72,47 @@ class PostCardWidget extends StatelessWidget {
     );
   }
 
+  void _showComments(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CommentsModal(postId: post.id, postTitle: post.title),
+    );
+  }
+
+  void _showPix(BuildContext context) async {
+    final vendorProfile = await AuthService().getUserProfile(post.vendorId);
+    final effectivePixKey = vendorProfile?.pixKey?.isNotEmpty == true
+        ? vendorProfile!.pixKey!
+        : (post.vendorPixKey?.isNotEmpty == true
+            ? post.vendorPixKey!
+            : (vendorProfile?.phone?.isNotEmpty == true
+                ? vendorProfile!.phone!
+                : (post.vendorPhone ?? '11987654321')));
+    final effectivePixKeyType = vendorProfile?.pixKeyType;
+    final merchantName = vendorProfile?.name ?? post.vendorName;
+    final merchantTradeName = (vendorProfile?.tradeName?.isNotEmpty == true)
+        ? vendorProfile!.tradeName!
+        : post.vendorTradeName;
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PixPaymentModal(
+        pixKey: effectivePixKey,
+        pixKeyType: effectivePixKeyType,
+        merchantName: merchantName,
+        merchantTradeName: merchantTradeName,
+        amount: post.price,
+        itemTitle: post.title,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -85,23 +128,33 @@ class PostCardWidget extends StatelessWidget {
             // Cabeçalho do Vendedor
             Padding(
               padding: const EdgeInsets.all(12.0),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => VendorProfileScreen(vendorId: post.vendorId),
-                    ),
-                  );
-                },
-                child: Row(
-                  children: [
-                    CircleAvatar(
+              child: Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VendorProfileScreen(vendorId: post.vendorId),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
                       backgroundColor: AppTheme.primaryLight,
                       child: const Icon(Icons.storefront, color: AppTheme.primaryDark),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VendorProfileScreen(vendorId: post.vendorId),
+                          ),
+                        );
+                      },
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -122,8 +175,9 @@ class PostCardWidget extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppTheme.secondaryColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
@@ -140,7 +194,6 @@ class PostCardWidget extends StatelessWidget {
                 ],
               ),
             ),
-          ),
 
             // Foto do Produto
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
@@ -193,16 +246,20 @@ class PostCardWidget extends StatelessWidget {
                       height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
+
+                  // Barra de Interação (Likes, Comentários Onda 3 e Pagamento PIX Onda 3)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Curtidas
                       Row(
                         children: [
                           IconButton(
                             icon: Icon(
                               post.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                              color: post.isLikedByMe ? Colors.red : Colors.grey,
+                              color: post.isLikedByMe ? Colors.red : Colors.grey.shade700,
+                              size: 22,
                             ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -218,26 +275,41 @@ class PostCardWidget extends StatelessWidget {
                               }
                             },
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
-                            '${post.likesCount} curtidas',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            '${post.likesCount}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // Comentários (Onda 3)
+                          IconButton(
+                            icon: const Icon(Icons.chat_bubble_outline, size: 20, color: Colors.blueGrey),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => _showComments(context),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${post.commentsCount}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
                           ),
                         ],
                       ),
-                      const Row(
-                        children: [
-                          Text(
-                            'Toque para detalhes',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_ios, size: 10, color: AppTheme.primaryColor),
-                        ],
+
+                      // Botão Rápido PIX (Onda 3)
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.qr_code_2, size: 16),
+                        label: const Text('Pagar PIX'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(90, 32),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => _showPix(context),
                       ),
                     ],
                   ),

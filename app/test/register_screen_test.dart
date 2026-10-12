@@ -14,7 +14,7 @@ void main() {
 
     // Verifica elementos do cabeçalho
     expect(find.text('Criar Conta'), findsOneWidget);
-    expect(find.text('Cadastre-se no Pega Bode'), findsOneWidget);
+    expect(find.text('Cadastre-se no AchaNaRua'), findsOneWidget);
     expect(find.text('Sou Cliente'), findsOneWidget);
     expect(find.text('Sou Vendedor'), findsOneWidget);
 

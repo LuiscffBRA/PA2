@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:pa2/core/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -42,8 +41,14 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen> with Ticker
   }
 
   void _checkSessionAndNavigate() {
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
+    bool hasSession = false;
+    try {
+      hasSession = Supabase.instance.client.auth.currentSession != null;
+    } catch (_) {
+      hasSession = false;
+    }
     
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
