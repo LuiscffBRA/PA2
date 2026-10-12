@@ -472,7 +472,7 @@ class _PostDetailsModalState extends State<PostDetailsModal> {
                     )
                   else
                     Column(
-                      children: _comments.take(3).map((c) {
+                      children: (_comments.length > 3 ? _comments.sublist(_comments.length - 3) : _comments).map((c) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(10),
