@@ -66,6 +66,7 @@ class _CommentsModalState extends State<CommentsModal> {
   }
 
   Future<void> _sendComment() async {
+    if (_isSending) return;
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
@@ -78,6 +79,7 @@ class _CommentsModalState extends State<CommentsModal> {
     }
 
     setState(() => _isSending = true);
+    _commentController.clear();
     try {
       final comment = await _feedService.addComment(
         postId: widget.postId,
@@ -85,10 +87,13 @@ class _CommentsModalState extends State<CommentsModal> {
         content: text,
       );
 
-      _commentController.clear();
       if (mounted) {
         setState(() {
-          _comments.add(comment);
+          final exists = _comments.any((c) => c.id == comment.id ||
+              (c.content == comment.content && c.userId == comment.userId && c.createdAt.difference(comment.createdAt).inSeconds.abs() < 5));
+          if (!exists) {
+            _comments.add(comment);
+          }
           _isSending = false;
         });
         _scrollToBottom();
@@ -96,6 +101,7 @@ class _CommentsModalState extends State<CommentsModal> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSending = false);
+        _commentController.text = text;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao enviar comentário: $e')),
         );

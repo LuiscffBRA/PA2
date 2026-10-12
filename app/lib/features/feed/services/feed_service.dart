@@ -113,7 +113,7 @@ class FeedService extends ChangeNotifier {
           .order('created_at', ascending: true);
 
       final comments = (response as List).map((row) => CommentModel.fromJson(row)).toList();
-      _commentsByPostId[postId] = comments;
+      _commentsByPostId[postId] = List<CommentModel>.from(comments);
       
       // Atualiza a contagem no post correspondente
       final postIndex = _posts.indexWhere((p) => p.id == postId);
@@ -122,11 +122,11 @@ class FeedService extends ChangeNotifier {
         notifyListeners();
       }
 
-      return comments;
+      return List<CommentModel>.from(comments);
     } catch (e) {
       debugPrint('Aviso: Falha ao buscar comentários no Supabase ($e)');
-      // Fallback em memória
-      return _commentsByPostId[postId] ?? [];
+      // Fallback em memória (sempre retorna cópia para evitar referência direta mutável)
+      return List<CommentModel>.from(_commentsByPostId[postId] ?? []);
     }
   }
 

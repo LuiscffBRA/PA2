@@ -53,6 +53,7 @@ class _PostDetailsModalState extends State<PostDetailsModal> {
   }
 
   Future<void> _sendQuickComment() async {
+    if (_isSendingComment) return;
     final text = _quickCommentController.text.trim();
     if (text.isEmpty) return;
 
@@ -65,22 +66,27 @@ class _PostDetailsModalState extends State<PostDetailsModal> {
     }
 
     setState(() => _isSendingComment = true);
+    _quickCommentController.clear();
     try {
       final comment = await _feedService.addComment(
         postId: widget.post.id,
         user: user,
         content: text,
       );
-      _quickCommentController.clear();
       if (mounted) {
         setState(() {
-          _comments.add(comment);
+          final exists = _comments.any((c) => c.id == comment.id ||
+              (c.content == comment.content && c.userId == comment.userId && c.createdAt.difference(comment.createdAt).inSeconds.abs() < 5));
+          if (!exists) {
+            _comments.add(comment);
+          }
           _isSendingComment = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSendingComment = false);
+        _quickCommentController.text = text;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao comentar: $e')),
         );
