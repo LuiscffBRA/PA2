@@ -149,12 +149,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final priceClean = _priceController.text.replaceAll(',', '.').trim();
       final price = double.tryParse(priceClean) ?? 0.0;
 
+      String? finalImageUrl = _selectedImageUrl;
+      if (_pickedImageFile != null) {
+        final bytes = await _pickedImageFile!.readAsBytes();
+        final ext = _pickedImageFile!.name.split('.').last.toLowerCase();
+        final uploadedUrl = await _feedService.uploadPostImage(
+          bytes: bytes,
+          fileExtension: ext.isNotEmpty ? ext : 'jpg',
+        );
+        if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+          finalImageUrl = uploadedUrl;
+        }
+      }
+
       await _feedService.createPost(
         vendor: user,
         title: _titleController.text,
         description: _descriptionController.text,
         price: price,
-        imageUrl: _selectedImageUrl,
+        imageUrl: finalImageUrl,
         category: _selectedCategory?.name,
       );
 

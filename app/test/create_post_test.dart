@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pa2/features/auth/models/user_model.dart';
 import 'package:pa2/features/feed/services/feed_service.dart';
@@ -80,6 +81,15 @@ void main() {
         ),
         throwsA(isA<Exception>()),
       );
+    });
+
+    test('uploadPostImage lida com ambiente de testes sem quebrar', () async {
+      final result = await feedService.uploadPostImage(
+        bytes: Uint8List.fromList([1, 2, 3]),
+        fileExtension: 'jpg',
+      );
+      // Em testes unitários sem Supabase.initialize, deve retornar null e não estourar exceção
+      expect(result, isNull);
     });
   });
 }

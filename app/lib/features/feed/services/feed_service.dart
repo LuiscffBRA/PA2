@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pa2/features/auth/models/user_model.dart';
@@ -268,6 +269,39 @@ class FeedService extends ChangeNotifier {
       debugPrint('Aviso: Falha ao buscar posts do vendedor: $e');
       // Tenta fallback offline
       return _posts.where((p) => p.vendorId.toLowerCase() == vendorId.toLowerCase()).toList();
+    }
+  }
+
+  /// Faz upload da foto para o Supabase Storage e retorna a URL pública
+  Future<String?> uploadPostImage({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    try {
+      final client = Supabase.instance.client;
+      final cleanExt = fileExtension.replaceAll('.', '').toLowerCase();
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch}.$cleanExt';
+      final path = 'posts/$fileName';
+
+      final mimeType = cleanExt == 'png'
+          ? 'image/png'
+          : cleanExt == 'webp'
+              ? 'image/webp'
+              : 'image/jpeg';
+
+      await client.storage.from('post-images').uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(
+          contentType: mimeType,
+          upsert: true,
+        ),
+      );
+
+      return client.storage.from('post-images').getPublicUrl(path);
+    } catch (e) {
+      debugPrint('Aviso ao fazer upload da imagem no Supabase Storage: $e');
+      return null;
     }
   }
 
